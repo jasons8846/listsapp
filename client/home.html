@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" integrity="sha512-KfkfwYDsLkIlwQp6LFnl8zNdLGxu9YAA1QvwINks4PhcElQSvqcyVLLD9aMhXd13uQjoXtEKNosOWaZqXgel0g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="http://localhost:3000/css">
+    <link rel="stylesheet" type="text/css" media="screen and (max-width: 1024px)" href="http://localhost:3000/cssmobile">
+    <title>Test Env | Home Page</title>
+</head>
+<body id="home-body">
+    <div id="navbar">
+        <div id="nav-left"><h1>Shopping List</h1></div> 
+        <div id="nav-right"><div id="logged-user"><p>Welcome, <span id="user">Test</span></p></div> <button id="btn-logout" class="btn-primary">Logout</button></div>  
+    </div>
+    <div id="list">
+        <!-- <h2>List</h2> -->
+        <div id="add-item">
+            <label for="add-item-input"></label>
+            <input id="add-item-input" name="add-item-input" type="text" placeholder="Add Item">
+            <button id="add-item-btn" class="btn-primary" onclick="addItem()">Add</button>
+        </div>
+        <div id="shop-list">
+            <ul id="shop-list-ul">
+            </ul>
+            <button id="btn-clear" class="btn-primary" onclick="deleteAll()">Clear List</button>
+        </div>
+    </div>
+</body>
+<script>
+    let logBtn = document.getElementById("btn-logout");
+    let loggedInUserGlobal = "";
+    let itemInput = document.getElementById("add-item-input");
+
+    logBtn.addEventListener("click", function(e)  {
+      e.preventDefault();
+      logOutUser();
+    });
+
+    itemInput.addEventListener("keypress", function(e){
+
+        if (e.key === "Enter"){
+            e.preventDefault();
+            addItem();
+        }
+    })
+
+    async function logOutUser(){
+        let api_url = 'http://localhost:3000/logout'
+        const response = await fetch(api_url); 
+
+        location.replace("/");
+    }
+
+    async function strikeItem(target){
+        let api_url = 'http://localhost:3000/strikeupdate';
+        let selectItem = target.parentElement.previousElementSibling;
+        let strTxt = selectItem.innerText.strike();
+
+        if(selectItem.style.textDecoration === "line-through"){
+            selectItem.style.textDecoration = "none"
+
+            const response = await fetch(api_url,{
+                method: 'POST',
+                headers: {
+                    'Accept' : 'applicatoin/json',
+                    'Content-Type': 'application/json' 
+                },
+                body: JSON.stringify({username: loggedInUserGlobal, item: selectItem.innerText, strike: "no"})
+                });
+
+        }else{
+            selectItem.style.textDecoration = "line-through";
+
+            const response = await fetch(api_url,{
+                method: 'POST',
+                headers: {
+                    'Accept' : 'applicatoin/json',
+                    'Content-Type': 'application/json' 
+                },
+                body: JSON.stringify({username: loggedInUserGlobal, item: selectItem.innerText,strike: "yes"})
+                });
+        }
+  
+    }
+
+    async function deleteItem(target){
+        let api_url = 'http://localhost:3000/deleteitem';
+        let selectItem = target.parentElement.previousElementSibling;
+
+        const response = await fetch(api_url,{
+                method: 'POST',
+                headers: {
+                    'Accept' : 'applicatoin/json',
+                    'Content-Type': 'application/json' 
+                },
+                body: JSON.stringify({username: loggedInUserGlobal, item: selectItem.innerText})
+                });
+
+        target.parentElement.parentElement.remove();
+
+    }
+
+    async function addItem(){
+        let api_url = 'http://localhost:3000/additem';
+        let addItem = document.getElementById("add-item-input");
+        let list = document.getElementById("shop-list-ul");
+
+        if(addItem.value.length > 0){
+        var li = document.createElement("li");
+        let txtDiv = document.createElement("div");
+        let secDiv = document.createElement("div");
+        let chkDiv = document.createElement("div");
+        let xDiv = document.createElement("div");
+        let chkIcon = document.createElement("i");
+        let xIcon = document.createElement("i");
+
+        chkDiv.classList.add("check");
+        xDiv.classList.add("xmark");
+        chkIcon.classList.add("fa-solid");
+        chkIcon.classList.add("fa-check");
+        xIcon.classList.add("fa-solid");
+        xIcon.classList.add("fa-xmark");
+        secDiv.classList.add("sec-div");
+
+        txtDiv.innerText= addItem.value;
+
+        chkDiv.setAttribute("onclick","strikeItem(this)");
+        chkDiv.appendChild(chkIcon);
+        xDiv.appendChild(xIcon);
+        xDiv.setAttribute("onclick","deleteItem(this)");
+        secDiv.appendChild(chkDiv);
+        secDiv.appendChild(xDiv);
+        li.appendChild(txtDiv);
+        li.appendChild(secDiv);
+        list.appendChild(li);
+
+        
+        const response = await fetch(api_url,{
+                method: 'POST',
+                headers: {
+                    'Accept' : 'applicatoin/json',
+                    'Content-Type': 'application/json' 
+                },
+                body: JSON.stringify({username: loggedInUserGlobal, item: addItem.value})
+                });
+                
+                addItem.value = "";
+        }
+    }
+
+    async function deleteAll(){
+        let api_url = 'http://localhost:3000/deleteall';
+        let itemList = document.getElementById("shop-list-ul");
+
+        const response = await fetch(api_url,{
+                method: 'POST',
+                headers: {
+                    'Accept' : 'applicatoin/json',
+                    'Content-Type': 'application/json' 
+                },
+                body: JSON.stringify({username: loggedInUserGlobal})
+                });
+
+        itemList.innerHTML = "";
+        
+    }
+
+    async function getLoggedInUser(){
+        let api_url = 'http://localhost:3000/loggeduser'
+        const response = await fetch(api_url);
+        const data = await response.json();
+        let theUser = document.getElementById("user");
+
+        console.log(data.user);
+
+        theUser.innerText = data.user;
+        loggedInUserGlobal = data.user;
+
+        getUserShoppingList(data.user);
+    }
+
+
+
+    async function getUserShoppingList(user){
+    let api_url = 'http://localhost:3000/shoppinglist';
+    let list = document.getElementById("shop-list-ul");
+    
+
+    const response = await fetch(api_url,{
+      method: 'POST',
+      headers: {
+        'Accept' : 'applicatoin/json',
+        'Content-Type': 'application/json' 
+      },
+      body: JSON.stringify({username: user})
+    });
+    const data = await response.json();
+
+    console.log(data);
+
+    for(var i in data){
+        var li = document.createElement("li");
+        let txtDiv = document.createElement("div");
+        let secDiv = document.createElement("div");
+        let chkDiv = document.createElement("div");
+        let xDiv = document.createElement("div");
+        let chkIcon = document.createElement("i");
+        let xIcon = document.createElement("i");
+
+        chkDiv.classList.add("check");
+        xDiv.classList.add("xmark");
+        chkIcon.classList.add("fa-solid");
+        chkIcon.classList.add("fa-check");
+        xIcon.classList.add("fa-solid");
+        xIcon.classList.add("fa-xmark");
+        secDiv.classList.add("sec-div");
+
+        txtDiv.innerText=data[i].item;
+
+        if(data[i].strike === "yes"){
+            txtDiv.style.textDecoration = "line-through";
+        }
+        
+        chkDiv.setAttribute("onclick","strikeItem(this)");
+        chkDiv.appendChild(chkIcon);
+        xDiv.appendChild(xIcon);
+        xDiv.setAttribute("onclick","deleteItem(this)");
+        secDiv.appendChild(chkDiv);
+        secDiv.appendChild(xDiv);
+        li.appendChild(txtDiv);
+        li.appendChild(secDiv);
+        list.appendChild(li);
+
+    }
+
+    
+
+//   <div class="check" onclick="strikeItem(this)"><i class="fa-solid fa-check"></i></div>
+//                         <div class="xmark"><i class="fa-solid fa-xmark"></i></div>
+
+  }
+
+    getLoggedInUser();
+</script>
+
+</html>
